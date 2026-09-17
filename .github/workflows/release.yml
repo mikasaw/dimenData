@@ -1,0 +1,65 @@
+# Release: build unsigned binaries and publish a GitHub Release.
+# Triggers: pushing a v* tag, or manual dispatch.
+#
+# NOTE: artifacts are UNSIGNED. Windows may show SmartScreen warnings;
+# code signing requires a certificate and is tracked separately.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "release tag (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: cmd
+    env:
+      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build hwfp.exe and hwfp.dll
+        run: |
+          build.cmd app || exit /b 1
+          build.cmd dll || exit /b 1
+
+      - name: Stage release payload
+        run: |
+          if exist dist rmdir /s /q dist
+          mkdir dist\hwfp-%TAG%-win64\include
+          copy build\hwfp.exe dist\hwfp-%TAG%-win64\ >nul
+          copy build\hwfp.dll dist\hwfp-%TAG%-win64\ >nul
+          copy build\hwfp.lib dist\hwfp-%TAG%-win64\ >nul
+          copy src\dll\hwfp_dll.h dist\hwfp-%TAG%-win64\include\ >nul
+          xcopy config dist\hwfp-%TAG%-win64\config\ /e /i >nul
+          copy README.md dist\hwfp-%TAG%-win64\ >nul
+          copy README_EN.md dist\hwfp-%TAG%-win64\ >nul
+          copy LICENSE dist\hwfp-%TAG%-win64\ >nul
+          rem guard: the per-item copies above use >nul and do not fail the step
+          if not exist dist\hwfp-%TAG%-win64\hwfp.exe exit /b 1
+          if not exist dist\hwfp-%TAG%-win64\hwfp.dll exit /b 1
+          if not exist dist\hwfp-%TAG%-win64\include\hwfp_dll.h exit /b 1
+          tar -a -c -f hwfp-%TAG%-win64.zip -C dist hwfp-%TAG%-win64
+          if errorlevel 1 exit /b 1
+
+      - name: Write release notes
+        run: |
+          > relnotes.txt echo Windows x64 build of hwfp.exe and hwfp.dll.
+          >>relnotes.txt echo **UNSIGNED**: Windows SmartScreen may warn on first run.
+          >>relnotes.txt echo Contents: hwfp.exe - hwfp.dll - hwfp.lib import library - include/hwfp_dll.h - config/ default configuration - READMEs - LICENSE.
+
+      - name: Create GitHub Release
+        run: gh release create "%TAG%" "hwfp-%TAG%-win64.zip" --title "hwfp %TAG% (unsigned)" --notes-file relnotes.txt
+        env:
+          GH_TOKEN: ${{ github.token }}

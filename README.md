@@ -103,7 +103,12 @@ hwfp.exe license --check license.json --pubkey k.pub [--threshold 0.85]
 
 - [开发计划](开发计划.md)（模块化多通道架构 / 里程碑 / 风险）
 - [M1 POC 采集项可用性矩阵](docs/M1-POC-采集项可用性矩阵.md)（双环境实测 + 17 条规范化规则 R1-R17）
+- [数据结构](docs/数据结构.md)（采集报告 schema v1 / verify·license 输出 / 授权文件与 canonical）
 - [English README](README_EN.md)（英文入口；两份深度文档目前为中文）
+
+发布自动化：`.github/workflows/release.yml` 在推送 `v*` 标签（或手动触发）时在
+GitHub runner 构建未签名的 hwfp.exe/hwfp.dll 并发布为 GitHub Release（代码签名
+需证书，见"当前进度"待办）。
 
 ## 当前进度
 
@@ -114,7 +119,7 @@ hwfp.exe license --check license.json --pubkey k.pub [--threshold 0.85]
 | M3 指纹引擎 | ✅ 规范化/加权/整机+子指纹/相似度（验收通过） |
 | M4 CLI 与输出 | ✅ hwfp.exe（schema v1 / verify / 配置化） |
 | 集成验证 | ✅ 宿主机 86 实例 ~210ms；VM 44 实例 ~460ms；同机指纹逐字节一致 |
-| 待办 | TPM 管理员权限复测、≥3 台品牌物理机补测、代码签名与发布包 |
+| 待办 | TPM 管理员权限复测、≥3 台品牌物理机补测、代码签名（发布包自动化已上线，当前产物未签名） |
 
 ## 目录结构
 

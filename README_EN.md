@@ -142,6 +142,10 @@ docs/            M1 POC availability matrix (measured values + rules R1–R17)
 - [Development plan (Chinese)](开发计划.md) — multi-channel architecture, milestones, risks
 - [M1 POC availability matrix (Chinese)](docs/M1-POC-采集项可用性矩阵.md) — dual-environment
   measurements and 17 normalization rules (R1–R17)
+- [Data structures (Chinese)](docs/数据结构.md) — collection report schema v1,
+  verify/license-check output shapes, license file and its canonical signing text
+- Release automation: `.github/workflows/release.yml` builds unsigned binaries on a
+  `v*` tag push (or manual dispatch) and publishes them as a GitHub Release
 
 > Both deep-dive documents are currently Chinese-only; this README is the English entry point.
 
