@@ -1,0 +1,85 @@
+// ============================================================
+// 字段定义表（X 宏）
+// 每行: HWFP_FIELD(枚举名, "字段键", 指纹分组, 默认归并策略, 默认指纹权重)
+// —— 本文件是字段清单的唯一权威来源：枚举、定义表、名称查找均由此展开。
+// 权重为默认值，运行时可被配置文件覆盖；weight=0 表示只采集不入指纹。
+// ============================================================
+
+// —— BIOS（SMBIOS Type0）——
+HWFP_FIELD(BiosVendor,      "bios.vendor",      FpGroup::Bios, MergeStrategy::FirstByPriority, 5)
+HWFP_FIELD(BiosVersion,     "bios.version",     FpGroup::Bios, MergeStrategy::FirstByPriority, 5)
+HWFP_FIELD(BiosReleaseDate, "bios.release_date",FpGroup::Bios, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(BiosSerial,      "bios.serial",      FpGroup::Bios, MergeStrategy::FirstByPriority, 5)
+
+// —— 整机（SMBIOS Type1）——
+HWFP_FIELD(SysManufacturer, "sys.manufacturer", FpGroup::Sys,  MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(SysProduct,      "sys.product",      FpGroup::Sys,  MergeStrategy::FirstByPriority, 5)
+HWFP_FIELD(SysVersion,      "sys.version",      FpGroup::Sys,  MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(SysSerial,       "sys.serial",       FpGroup::Sys,  MergeStrategy::FirstByPriority, 30)
+HWFP_FIELD(SysUuid,         "sys.uuid",         FpGroup::Sys,  MergeStrategy::FirstByPriority, 15)
+HWFP_FIELD(SysSku,          "sys.sku",          FpGroup::Sys,  MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(SysFamily,       "sys.family",       FpGroup::Sys,  MergeStrategy::FirstByPriority, 0)
+
+// —— 主板（SMBIOS Type2）——
+HWFP_FIELD(BoardManufacturer, "board.manufacturer", FpGroup::Board, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(BoardProduct,      "board.product",      FpGroup::Board, MergeStrategy::FirstByPriority, 10)
+HWFP_FIELD(BoardVersion,      "board.version",      FpGroup::Board, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(BoardSerial,       "board.serial",       FpGroup::Board, MergeStrategy::Consensus,       20)
+
+// —— CPU（SMBIOS Type4 / CPUID / WMI）——
+HWFP_FIELD(CpuManufacturer, "cpu.manufacturer", FpGroup::Cpu,  MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(CpuName,         "cpu.name",         FpGroup::Cpu,  MergeStrategy::FirstByPriority, 10)
+HWFP_FIELD(CpuId,           "cpu.id",           FpGroup::Cpu,  MergeStrategy::Consensus,       10)
+HWFP_FIELD(CpuCores,        "cpu.cores",        FpGroup::Cpu,  MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(CpuThreads,      "cpu.threads",      FpGroup::Cpu,  MergeStrategy::FirstByPriority, 0)
+
+// —— 内存（列表型；序列号不可靠，仅容量参与子指纹，见矩阵 R8）——
+HWFP_FIELD(MemorySize,      "memory.size",      FpGroup::Memory, MergeStrategy::MergeList, 10)
+HWFP_FIELD(MemorySerial,    "memory.serial",    FpGroup::Memory, MergeStrategy::MergeList, 0)
+HWFP_FIELD(MemoryPart,      "memory.part",      FpGroup::Memory, MergeStrategy::MergeList, 0)
+HWFP_FIELD(MemoryLocator,   "memory.locator",   FpGroup::Memory, MergeStrategy::MergeList, 0)
+
+// —— 磁盘（列表型；ConsensusAligned：按 instance_key=盘位号逐盘跨通道对齐，
+//     输出按盘位排序——WMI 返回顺序非升序，合并去重会错位，见矩阵 R5）——
+HWFP_FIELD(DiskModel,       "disk.model",       FpGroup::Disk, MergeStrategy::ConsensusAligned,  5)
+HWFP_FIELD(DiskSerial,      "disk.serial",      FpGroup::Disk, MergeStrategy::ConsensusAligned,  20)
+HWFP_FIELD(DiskFirmware,    "disk.firmware",    FpGroup::Disk, MergeStrategy::ConsensusAligned,  0)
+HWFP_FIELD(DiskSizeBytes,   "disk.size_bytes",  FpGroup::Disk, MergeStrategy::ConsensusAligned,  0)
+
+// —— 网卡（实例对齐：instance_key=MAC，跨通道按物理网卡配对验证；
+// 仅物理网卡入清单，MAC 低权重）——
+HWFP_FIELD(NicMac,          "nic.mac",          FpGroup::Nic,  MergeStrategy::ConsensusAligned, 5)
+HWFP_FIELD(NicName,         "nic.name",         FpGroup::Nic,  MergeStrategy::ConsensusAligned, 0)
+
+// —— 显卡。gpu.uuid 参与指纹（FpGpu 组，权重 5）：NVIDIA 卡级唯一稳定标识
+//     （消费级卡无序列号——厂商未烧录，spawn nvidia-smi 采集，属杀软关注行为）。
+//     覆盖局限：仅 NVIDIA 有值，AMD/Intel/混合平台的该组不产生（缺失字段整行跳过，
+//     不影响其指纹）；换显卡会带动 gpu 组子指纹变化（相似度按组权重 5/165 计）。
+//     gpu.name/vendor 仍只采集（同机含虚拟显示残留、噪声大）——
+HWFP_FIELD(GpuName,         "gpu.name",         FpGroup::None, MergeStrategy::MergeList, 0)
+HWFP_FIELD(GpuVendor,       "gpu.vendor",       FpGroup::None, MergeStrategy::MergeList, 0)
+HWFP_FIELD(GpuUuid,         "gpu.uuid",         FpGroup::Gpu,  MergeStrategy::MergeList, 5)
+
+// —— 显示器（列表型；EDID 幽灵条目问题，不入指纹，见矩阵 R9）——
+HWFP_FIELD(MonitorVendorCode, "monitor.vendor_code", FpGroup::None, MergeStrategy::MergeList, 0)
+HWFP_FIELD(MonitorProductId,  "monitor.product_id",  FpGroup::None, MergeStrategy::MergeList, 0)
+HWFP_FIELD(MonitorSerial,     "monitor.serial",      FpGroup::None, MergeStrategy::MergeList, 0)
+
+// —— 机箱（SMBIOS Type3 / WMI）——
+HWFP_FIELD(ChassisManufacturer, "chassis.manufacturer", FpGroup::None, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(ChassisSerial,       "chassis.serial",       FpGroup::None, MergeStrategy::FirstByPriority, 0)
+
+// —— OS 标识（重装系统会变，低权重；见矩阵 R3）——
+HWFP_FIELD(OsMachineGuid,     "os.machine_guid",    FpGroup::Os, MergeStrategy::FirstByPriority, 5)
+HWFP_FIELD(OsProductId,       "os.product_id",      FpGroup::Os, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(OsDisplayVersion,  "os.display_version", FpGroup::Os, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(OsBuild,           "os.build",           FpGroup::Os, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(OsInstallDate,     "os.install_date",    FpGroup::Os, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(OsSecureBoot,      "os.secure_boot",     FpGroup::None, MergeStrategy::FirstByPriority, 0)
+
+// —— TPM（环境相关，低权重）——
+HWFP_FIELD(TpmAvailable,    "tpm.available",    FpGroup::None, MergeStrategy::FirstByPriority, 0)
+HWFP_FIELD(TpmSpecVersion,  "tpm.specversion",  FpGroup::None, MergeStrategy::FirstByPriority, 0)
+
+// —— 自检（元信息，永不入指纹）——
+HWFP_FIELD(MetaCryptoSelfTest, "meta.crypto_self_test", FpGroup::None, MergeStrategy::FirstByPriority, 0)

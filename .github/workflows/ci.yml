@@ -1,0 +1,70 @@
+# CI: build + unit tests + DLL integration + CLI sanity + hardware smoke + fuzz.
+# Toolchain: MSVC via build.cmd (locates vcvars64 through vswhere; no CMake).
+#
+# Privacy note: the smoke step collects REAL hardware identifiers from the
+# ephemeral runner VM. Full output is redirected to a file that stays on the
+# runner -- only the timing summary line is printed to the public log.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      fuzz_rounds:
+        description: "total fuzz rounds (split across 6 targets)"
+        required: false
+        default: "50000"
+  schedule:
+    - cron: "17 3 * * 1"   # weekly: long fuzz run (fuzz-nightly job)
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unit tests
+        run: build.cmd
+
+      - name: Build hwfp.exe
+        run: build.cmd app
+
+      - name: Build hwfp.dll and run integration consumer
+        run: build.cmd dlltest
+
+      - name: CLI sanity
+        run: |
+          build\hwfp.exe --version || exit /b 1
+          build\hwfp.exe --fields || exit /b 1
+
+      - name: Smoke collect (identifiers stay on runner)
+        run: |
+          if not exist build mkdir build
+          call build.cmd smoke > build\smoke_out.txt
+          if errorlevel 1 exit /b 1
+          findstr /b /c:"merged fields:" build\smoke_out.txt
+          del build\smoke_out.txt
+
+      - name: Fuzz (deterministic)
+        env:
+          FUZZ_ROUNDS: ${{ github.event.inputs.fuzz_rounds || '50000' }}
+        run: build.cmd fuzz %FUZZ_ROUNDS%
+
+  fuzz-nightly:
+    if: github.event_name == 'schedule'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: cmd
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Long fuzz run (2M rounds total, ~333k per target)
+        run: build.cmd fuzz 2000000

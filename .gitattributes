@@ -1,0 +1,11 @@
+# 行尾与文本属性：统一按文本处理（仓库内以 LF 存储，检出按平台策略）
+* text=auto
+
+# 批处理必须保持可被 cmd.exe 解析的显式行尾
+*.cmd text eol=crlf
+
+# 明确二进制（避免任何转换）
+*.exe binary
+*.obj binary
+*.pdb binary
+*.png binary

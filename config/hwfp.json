@@ -1,0 +1,21 @@
+{
+  "_comment": "hwfp 默认配置；省略的项使用内置默认值（见 fields.def / 各通道 DefaultPriority）",
+  "channels": {
+    "smbios":   { "enabled": true, "priority": 10 },
+    "native":   { "enabled": true, "priority": 15 },
+    "wmi":      { "enabled": true, "priority": 20 },
+    "registry": { "enabled": true, "priority": 30 }
+  },
+  "fields": {
+    "board.serial": { "strategy": "consensus" },
+    "cpu.id":       { "strategy": "consensus" }
+  },
+  "execution": {
+    "max_workers": 4,
+    "per_task_timeout_ms": 3000
+  },
+  "output": {
+    "path": "",
+    "text": false
+  }
+}

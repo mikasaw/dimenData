@@ -1,0 +1,12 @@
+# 构建产物
+*.obj
+*.pdb
+*.ilk
+*.exe
+# 本机采集原始输出（含真实序列号/GUID，不入库）
+poc/out_*.txt
+*.hwfp.json
+t_p2.cmd
+
+# 构建产物与采集输出（含真实序列号/MAC，不入库）
+build/
